@@ -1,0 +1,4 @@
+Labels,Supervised (scratch),SSL + linear probe,SSL + full fine-tune
+100%,0.67975,0.754,0.804625
+10%,0.427625,0.692875,0.69625
+1%,0.251375,0.502875,0.492375
