@@ -1,0 +1,12 @@
+{
+  "acc_100": 0.67975,
+  "acc_10": 0.427625,
+  "acc_1": 0.251375,
+  "probe_acc_100": 0.677,
+  "probe_acc_10": 0.610625,
+  "probe_acc_1": 0.434375,
+  "finetune_acc_100": 0.804625,
+  "finetune_acc_10": 0.69625,
+  "finetune_acc_1": 0.492375,
+  "finetune_acc_1_lowlr": 0.393125
+}
