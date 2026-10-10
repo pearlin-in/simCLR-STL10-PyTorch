@@ -22,17 +22,37 @@ Labeled data is expensive; unlabeled data is everywhere. Self-supervised learnin
 
 ## Results
 
-*(20-epoch, unscheduled pretraining run — a longer, learning-rate-scheduled 100-epoch run is in progress; see [Status](#status--roadmap).)*
-
 | Labels used | Supervised (scratch) | SSL + linear probe | SSL + full fine-tune |
 |---|---|---|---|
-| 100% | 68.18% | 67.70% | **76.43%** |
-| 10%  | 42.01% | 61.06% | **64.31%** |
-| 1%   | 25.12% | **43.44%** | 40.76% |
+| 100% | 67.98% | 75.40% | **80.46%** |
+| 10%  | 42.76% | **69.29%** | 69.63% |
+| 1%   | 25.14% | **50.29%** | 49.24% |
 
-**Key result:** at 1% of the labels (5 images per class), the frozen SSL encoder beats the fully-trained from-scratch model by **+18.3 points** — despite never seeing a single label during pretraining. The gap is **+19.1 points** at 10% labels. This is the core claim self-supervised learning makes, demonstrated directly rather than assumed.
+**Key result:** at 1% of the labels (5 images per class), the SSL-pretrained encoder beats the fully-trained from-scratch model by **+25.2 points** — despite never seeing a single label during pretraining. The gap is **+26.5 points** at 10% labels. This is the core claim self-supervised learning makes, demonstrated directly rather than assumed.
 
-**A secondary finding worth noting:** at 1% labels, full fine-tuning (40.76%) *underperforms* the frozen linear probe (43.44%). With only 50 training images and an 11M-parameter network fully unfrozen, the model has far more capacity than the data can safely constrain — confirmed by testing a 10x lower learning rate, which underfit instead of fixing the gap (39.31%, train loss stuck at 0.87). This mirrors known findings in transfer-learning research that full fine-tuning can distort pretrained features in low-data regimes, where a frozen probe is the better-suited tool.
+### Pretraining-budget ablation: does longer, scheduled pretraining actually help?
+
+Two full encoders were trained and evaluated end-to-end: a 20-epoch run with a constant learning rate, and a 100-epoch run with warmup + cosine learning-rate decay.
+
+| Labels | Linear probe, 20-epoch SSL | Linear probe, 100-epoch SSL | Improvement |
+|---|---|---|---|
+| 100% | 67.70% | 75.40% | +7.7 pts |
+| 10%  | 61.06% | 69.29% | +8.2 pts |
+| 1%   | 43.44% | 50.29% | +6.9 pts |
+
+Longer, properly-scheduled pretraining produced a substantial, consistent improvement across every label fraction — pretraining duration and schedule materially affect downstream performance, not just a marginal tweak.
+
+### When does full fine-tuning underperform linear probing?
+
+At 1% labels, full fine-tuning underperformed the frozen linear probe in **both** pretraining runs, but the gap shrank as pretraining improved:
+
+| Labels | Finetune − probe, 20-epoch SSL | Finetune − probe, 100-epoch SSL |
+|---|---|---|
+| 100% | +8.73 pts | +5.06 pts |
+| 10%  | +3.25 pts | +0.34 pts |
+| 1%   | **−2.68 pts** | **−1.05 pts** |
+
+With only 50 training images and an 11M-parameter network fully unfrozen, the model has far more capacity than the data can safely constrain — confirmed in the 20-epoch run by testing a 10x lower learning rate, which underfit instead of closing the gap (39.31%, train loss stuck at 0.87, vs. 40.76% at the standard rate). A stronger pretrained encoder partially mitigates this effect but does not eliminate it, even at a 100-epoch pretraining budget. This mirrors known findings in transfer-learning research that full fine-tuning can distort pretrained features in low-data regimes, where a frozen probe is the better-suited tool.
 
 ## Repository structure
 
@@ -57,17 +77,15 @@ Built and run on Google Colab (free-tier T4 GPU). Requires PyTorch + torchvision
 
 ## Status & roadmap
 
-**Done:** supervised baseline, SimCLR pretraining (20-epoch version), linear probing, full fine-tuning, and the fine-tune-vs-probe investigation at 1% labels.
+**Done:** supervised baseline, SimCLR pretraining (both a 20-epoch unscheduled run and a 100-epoch warmup+cosine scheduled run), linear probing and full fine-tuning against both encoders, the fine-tune-vs-probe investigation at 1% labels, and the pretraining-budget ablation comparing the two runs.
 
-**In progress:** a longer, properly scheduled 100-epoch pretraining run (warmup + cosine learning-rate decay), to be compared against the 20-epoch result as a pretraining-budget ablation.
-
-**Planned:** t-SNE visualization of the learned embedding space, nearest-neighbor retrieval, an augmentation ablation study, and a finer-grained label-efficiency curve (5%, 25% added to the current three points).
+**Planned:** t-SNE visualization of the learned embedding space (against the 100-epoch encoder), nearest-neighbor retrieval, an augmentation ablation study, and a finer-grained label-efficiency curve (5%, 25% added to the current three points).
 
 ## Limitations
 
-- The 20-epoch pretraining results above come from a relatively short, unscheduled run; a longer scheduled run is expected to strengthen the gap further.
 - STL-10 is a curated, relatively "easy" dataset compared to the large, uncurated image pools used in production-scale SSL systems — the method generalizes, but these absolute numbers shouldn't be read as representative of that scale.
 - All reported test-set numbers are measured once, after training completes, and never used to make training decisions (no early stopping or checkpoint selection on test accuracy).
+- Pretraining duration clearly still matters at 100 epochs (see the ablation above) — the gains hadn't visibly plateaued, so an even longer run would likely improve results further; 100 epochs was chosen as a practical stopping point given free-tier compute constraints, not a point of diminishing returns.
 
 ## References
 
