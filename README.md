@@ -24,11 +24,15 @@ Labeled data is expensive; unlabeled data is everywhere. Self-supervised learnin
 
 | Labels used | Supervised (scratch) | SSL + linear probe | SSL + full fine-tune |
 |---|---|---|---|
-| 100% | 67.98% | 75.40% | **80.46%** |
-| 10%  | 42.76% | **69.29%** | 69.63% |
-| 1%   | 25.14% | **50.29%** | 49.24% |
+| 100% | 69.34% | 75.40% | **81.28%** |
+| 10%  | 38.95% | 69.29% | **70.34%** |
+| 1%   | 24.39% | **50.29%** | 46.88% |
 
-**Key result:** at 1% of the labels (5 images per class), the SSL-pretrained encoder beats the fully-trained from-scratch model by **+25.2 points** — despite never seeing a single label during pretraining. The gap is **+26.5 points** at 10% labels. This is the core claim self-supervised learning makes, demonstrated directly rather than assumed.
+**Key result:** at 1% of the labels (5 images per class), the SSL-pretrained encoder beats the fully-trained from-scratch model by **+25.9 points** — despite never seeing a single label during pretraining. The gap is **+31.4 points** at 10% labels. This is the core claim self-supervised learning makes, demonstrated directly rather than assumed.
+
+![t-SNE comparison: random-init encoder shows no structure; SSL-pretrained encoder shows clear, semantically sensible clustering by true class](figures/tsne_comparison.png)
+
+*t-SNE of test-set embeddings, colored by true class. The SSL-pretrained encoder (right) separates classes clearly — vehicles (car/truck/ship) cluster apart from animals, with sensible overlap among visually similar animal classes (dog/cat/horse/monkey/deer) — despite never seeing a single label during training. The random-init control (left), evaluated identically, shows no structure at all.*
 
 ### Pretraining-budget ablation: does longer, scheduled pretraining actually help?
 
@@ -44,22 +48,23 @@ Longer, properly-scheduled pretraining produced a substantial, consistent improv
 
 ### When does full fine-tuning underperform linear probing?
 
-At 1% labels, full fine-tuning underperformed the frozen linear probe in **both** pretraining runs, but the gap shrank as pretraining improved:
+At 1% labels, full fine-tuning underperformed the frozen linear probe in **both** pretraining runs — and the gap didn't close with more pretraining, it widened slightly:
 
 | Labels | Finetune − probe, 20-epoch SSL | Finetune − probe, 100-epoch SSL |
 |---|---|---|
-| 100% | +8.73 pts | +5.06 pts |
-| 10%  | +3.25 pts | +0.34 pts |
-| 1%   | **−2.68 pts** | **−1.05 pts** |
+| 100% | +8.73 pts | +5.88 pts |
+| 10%  | +3.25 pts | +1.05 pts |
+| 1%   | **−2.68 pts** | **−3.41 pts** |
 
-With only 50 training images and an 11M-parameter network fully unfrozen, the model has far more capacity than the data can safely constrain — confirmed in the 20-epoch run by testing a 10x lower learning rate, which underfit instead of closing the gap (39.31%, train loss stuck at 0.87, vs. 40.76% at the standard rate). A stronger pretrained encoder partially mitigates this effect but does not eliminate it, even at a 100-epoch pretraining budget. This mirrors known findings in transfer-learning research that full fine-tuning can distort pretrained features in low-data regimes, where a frozen probe is the better-suited tool.
+At 10% and 100% labels, fine-tuning's advantage over probing shrank as pretraining improved — the frozen probe got good enough that fine-tuning's extra adaptation mattered less. But at 1% labels (50 training images), a richer, better-pretrained encoder didn't rescue fine-tuning from this pattern. With an 11M-parameter network fully unfrozen, the model has far more capacity than 50 images can safely constrain — confirmed by testing a 10x lower learning rate, which underfit instead of closing the gap (42.74% vs. 46.88% at the standard rate, on the 100-epoch encoder). This mirrors known findings in transfer-learning research that full fine-tuning can distort pretrained features in low-data regimes, where a frozen probe is the better-suited tool.
 
 ## Repository structure
 
 ```
 .
 ├── self_supervised_cv.ipynb   # full pipeline: setup → baseline → SSL pretraining → evaluation
-├── need to update :))               
+├── checkpoints/                # saved encoder weights, probe/finetune checkpoints (gitignored)
+├── results.json                 # all measured accuracies, keyed by phase and label %
 └── figures/
     ├── label_efficiency_curve.png
     └── tsne_comparison.png
@@ -78,7 +83,7 @@ Built and run on Google Colab (free-tier T4 GPU). Requires PyTorch + torchvision
 
 **Done:** supervised baseline, SimCLR pretraining (both a 20-epoch unscheduled run and a 100-epoch warmup+cosine scheduled run), linear probing and full fine-tuning against both encoders, the fine-tune-vs-probe investigation at 1% labels, and the pretraining-budget ablation comparing the two runs.
 
-**Planned:** t-SNE visualization of the learned embedding space (against the 100-epoch encoder), nearest-neighbor retrieval, an augmentation ablation study, and a finer-grained label-efficiency curve (5%, 25% added to the current three points).
+**Planned:** nearest-neighbor retrieval, an augmentation ablation study, and a finer-grained label-efficiency curve (5%, 25% added to the current three points).
 
 ## Limitations
 
