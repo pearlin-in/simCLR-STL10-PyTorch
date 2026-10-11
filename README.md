@@ -59,8 +59,7 @@ With only 50 training images and an 11M-parameter network fully unfrozen, the mo
 ```
 .
 ├── self_supervised_cv.ipynb   # full pipeline: setup → baseline → SSL pretraining → evaluation
-├── checkpoints/                # saved encoder weights, probe/finetune checkpoints (gitignored)
-├── results.json                 # all measured accuracies, keyed by phase and label %
+├── need to update :))               
 └── figures/
     ├── label_efficiency_curve.png
     └── tsne_comparison.png
