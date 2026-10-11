@@ -126,9 +126,27 @@ The pattern is not simply "better pretraining fixes fine-tuning's low-data weakn
 
 ---
 
+### 5.5 — Fine-grained label-efficiency curve (1%, 5%, 10%, 25%, 100%)
+
+The original three-point comparison (1%/10%/100%) was extended with two more points, using the finished 100-epoch encoder:
+
+| Labels | Supervised (scratch) | SSL + linear probe | Gap |
+|---|---|---|---|
+| 1%   | 24.39% | 50.29% | +25.9 pts |
+| 5%   | 35.29% | 66.53% | **+31.2 pts** |
+| 10%  | 38.95% | 69.29% | +30.3 pts |
+| 25%  | 51.84% | 73.02% | +21.2 pts |
+| 100% | 69.34% | 75.40% | +6.1 pts |
+
+This revealed something the three-point version couldn't show: the SSL advantage does not monotonically increase as label fraction shrinks toward zero. It **peaks around 5–10% labels** and is actually slightly smaller at the extreme 1% point. Breaking down the growth between 1% and 5%: the probe's accuracy grew by +16.2 points over that interval, versus the scratch baseline's +10.9 points — a larger jump for the probe. The likely explanation is that at 1% (50 training images), even the lightweight linear probe head is itself somewhat data-starved (512 input features, 10 output classes, only 50 training points to fit it — an underdetermined system), so it hasn't fully exploited the frozen encoder's features yet. By 5%, it has, and the encoder's advantage shows most clearly before the scratch baseline gradually catches up with more data at 25% and 100%.
+
+### 5.6 — Nearest-neighbor retrieval
+
+Using the same frozen embeddings extracted for the t-SNE plot (no labels involved), the 5 nearest neighbors by cosine similarity were retrieved for one query image per class. Average same-class hit rate among the top-5 neighbors: **68.0%** — well above the 10% random-chance baseline for a 10-class problem. This is a second, independent line of evidence (beyond classification accuracy) that the embedding space genuinely groups semantically similar images together, purely as a result of contrastive pretraining with zero labels.
+
 ## 6. Interpretation
 
-- **The core self-supervised learning claim holds, and holds more strongly with more pretraining**: a model that never saw a single label beats a fully-labeled, from-scratch classifier by 18–31 points when labels are scarce, with the gap widening as the SSL pretraining budget increases.
+- **The core self-supervised learning claim holds, and holds more strongly with more pretraining**: a model that never saw a single label beats a fully-labeled, from-scratch classifier by 6–31 points depending on label fraction, with the gap widening substantially as the SSL pretraining budget increases (Section 5.3). The relationship between label scarcity and SSL's advantage is not simply monotonic, though — the gap peaks around 5–10% labels rather than at the most extreme 1% point (Section 5.5), a more precise finding than the common simplified claim that SSL helps "most when labels are scarcest."
 - **Full fine-tuning is not strictly better than linear probing, and the relationship is more nuanced than "more pretraining fixes it."** Fine-tuning is the better choice once there's enough labeled data (clear, and growing more efficient, wins at 10% and 100% labels as pretraining improved). But at 1% labels, frozen linear probing beat fine-tuning with *both* encoders, and the gap didn't close with more pretraining — it widened slightly (−2.68 → −3.41 points). A richer encoder helps fine-tuning close ground once there's a moderate amount of data, but doesn't rescue it from overfitting at the true data-starved extreme. This mirrors known results in transfer-learning research on feature distortion during fine-tuning in low-data regimes.
 - **Pretraining duration/schedule matters substantially**, not just as a minor tweak: moving from 20 unscheduled epochs to 100 scheduled epochs (warmup + cosine decay) improved every single downstream number, with gains that hadn't visibly plateaued by epoch 100 — suggesting results would likely improve further with an even longer budget, compute permitting.
 - **The t-SNE visualization provides direct visual confirmation** of what the accuracy numbers imply: embeddings from the SSL-pretrained encoder show clear, semantically sensible clustering by true class (vehicles — car, truck, ship — group separately from animals; visually similar animal classes like dog/cat/horse/monkey/deer show expected partial overlap) despite the encoder never seeing a single label. The random-init control encoder, evaluated identically, shows no structure at all — confirming the clustering is a genuine product of pretraining, not an artifact of the visualization method itself.
@@ -146,6 +164,6 @@ The pattern is not simply "better pretraining fixes fine-tuning's low-data weakn
 
 ## 8. Status
 
-**Complete:** supervised baseline, SimCLR pretraining (both 20-epoch and 100-epoch scheduled versions), linear probing and full fine-tuning against both encoders, the fine-tune-vs-probe investigation at 1% labels (replicated across both encoders and two learning rates), the pretraining-budget ablation, and the t-SNE visualization against the finished 100-epoch encoder. All numerics in this document are confirmed directly from `results.json`.
+**Complete:** supervised baseline, SimCLR pretraining (both 20-epoch and 100-epoch scheduled versions), linear probing and full fine-tuning against both encoders, the fine-tune-vs-probe investigation at 1% labels (replicated across both encoders and two learning rates), the pretraining-budget ablation, the t-SNE visualization, the fine-grained 5-point label-efficiency curve, and nearest-neighbor retrieval. All numerics in this document are confirmed directly from `results.json`.
 
-**Open (optional):** nearest-neighbor retrieval, an augmentation ablation study (retraining with one augmentation removed), and a finer-grained label-efficiency curve (5%, 25% added to the current three points).
+**Open (optional):** an augmentation ablation study (retraining with one SimCLR augmentation removed at a time) — the one remaining analysis, and the only one requiring further encoder retraining rather than reuse of the finished 100-epoch encoder.

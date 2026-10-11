@@ -58,6 +58,22 @@ At 1% labels, full fine-tuning underperformed the frozen linear probe in **both*
 
 At 10% and 100% labels, fine-tuning's advantage over probing shrank as pretraining improved — the frozen probe got good enough that fine-tuning's extra adaptation mattered less. But at 1% labels (50 training images), a richer, better-pretrained encoder didn't rescue fine-tuning from this pattern. With an 11M-parameter network fully unfrozen, the model has far more capacity than 50 images can safely constrain — confirmed by testing a 10x lower learning rate, which underfit instead of closing the gap (42.74% vs. 46.88% at the standard rate, on the 100-epoch encoder). This mirrors known findings in transfer-learning research that full fine-tuning can distort pretrained features in low-data regimes, where a frozen probe is the better-suited tool.
 
+### Fine-grained label efficiency (1%, 5%, 10%, 25%, 100%)
+
+| Labels | Supervised (scratch) | SSL + linear probe | Gap |
+|---|---|---|---|
+| 1%   | 24.39% | 50.29% | +25.9 pts |
+| 5%   | 35.29% | 66.53% | **+31.2 pts** |
+| 10%  | 38.95% | 69.29% | +30.3 pts |
+| 25%  | 51.84% | 73.02% | +21.2 pts |
+| 100% | 69.34% | 75.40% | +6.1 pts |
+
+The SSL advantage isn't simply largest at the lowest label fraction — it peaks around 5–10% labels, then narrows as the scratch baseline catches up with more data. Likely explanation: at 1% (50 images), even the lightweight linear probe head is itself somewhat data-starved (512 features, 10 classes, 50 training points), so it hasn't fully exploited the encoder's features yet; by 5% it has, and the pretrained features show their full advantage most clearly.
+
+### Nearest-neighbor retrieval
+
+Querying the frozen SSL encoder's embedding space (no labels used) for the 5 nearest neighbors by cosine similarity, averaged across one query per class: **68.0% same-class hit rate** — well above the 10% random-chance baseline for a 10-class problem, confirming the embedding space genuinely groups semantically similar images together.
+
 ## Repository structure
 
 ```
@@ -83,7 +99,7 @@ Built and run on Google Colab (free-tier T4 GPU). Requires PyTorch + torchvision
 
 **Done:** supervised baseline, SimCLR pretraining (both a 20-epoch unscheduled run and a 100-epoch warmup+cosine scheduled run), linear probing and full fine-tuning against both encoders, the fine-tune-vs-probe investigation at 1% labels, and the pretraining-budget ablation comparing the two runs.
 
-**Planned:** nearest-neighbor retrieval, an augmentation ablation study, and a finer-grained label-efficiency curve (5%, 25% added to the current three points).
+**Planned:** an augmentation ablation study (retraining with one augmentation removed at a time) — the one remaining optional analysis.
 
 ## Limitations
 
