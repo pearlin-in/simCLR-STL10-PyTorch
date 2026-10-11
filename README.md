@@ -74,18 +74,6 @@ The SSL advantage isn't simply largest at the lowest label fraction — it peaks
 
 Querying the frozen SSL encoder's embedding space (no labels used) for the 5 nearest neighbors by cosine similarity, averaged across one query per class: **68.0% same-class hit rate** — well above the 10% random-chance baseline for a 10-class problem, confirming the embedding space genuinely groups semantically similar images together.
 
-## Repository structure
-
-```
-.
-├── self_supervised_cv.ipynb   # full pipeline: setup → baseline → SSL pretraining → evaluation
-├── checkpoints/                # saved encoder weights, probe/finetune checkpoints (gitignored)
-├── results.json                 # all measured accuracies, keyed by phase and label %
-└── figures/
-    ├── label_efficiency_curve.png
-    └── tsne_comparison.png
-```
-
 ## Running it
 
 Built and run on Google Colab (free-tier T4 GPU). Requires PyTorch + torchvision (preinstalled on Colab).
