@@ -30,7 +30,7 @@ Labeled data is expensive; unlabeled data is everywhere. Self-supervised learnin
 
 **Key result:** at 1% of the labels (5 images per class), the SSL-pretrained encoder beats the fully-trained from-scratch model by **+25.9 points** — despite never seeing a single label during pretraining. The gap is **+31.4 points** at 10% labels. This is the core claim self-supervised learning makes, demonstrated directly rather than assumed.
 
-![t-SNE comparison: random-init encoder shows no structure; SSL-pretrained encoder shows clear, semantically sensible clustering by true class](figures/tsne_comparison.png)
+![t-SNE comparison: random-init encoder shows no structure; SSL-pretrained encoder shows clear, semantically sensible clustering by true class](figures/100ep/tsne_comparison.png)
 
 *t-SNE of test-set embeddings, colored by true class. The SSL-pretrained encoder (right) separates classes clearly — vehicles (car/truck/ship) cluster apart from animals, with sensible overlap among visually similar animal classes (dog/cat/horse/monkey/deer) — despite never seeing a single label during training. The random-init control (left), evaluated identically, shows no structure at all.*
 
